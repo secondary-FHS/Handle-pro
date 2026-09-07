@@ -3,10 +3,31 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Text & Document Editor</title>
+  <title>PDF Document Studio</title>
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#1e3a8a',
+            }
+          }
+        }
+      }
+    }
+  </script>
   
   <!-- FontAwesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -19,37 +40,37 @@
   
   <!-- PDF-Lib for modifying and saving PDFs -->
   <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-  <script src="https://unpkg.com/@pdf-lib/fontkit/dist/fontkit.umd.min.js"></script>
 
-  <!-- Google Fonts for typography previews -->
+  <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=Inter:wght@400;500;600;700&family=Playfair+Display&family=Roboto+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
-      width: 8px;
-      height: 8px;
+      width: 6px;
+      height: 6px;
     }
     ::-webkit-scrollbar-track {
-      background: #0f172a;
+      background: #090d16;
     }
     ::-webkit-scrollbar-thumb {
-      background: #334155;
+      background: #1e293b;
       border-radius: 4px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: #475569;
+      background: #334155;
     }
 
-    /* Text Layer & Canvas Overlay */
+    /* PDF Page Styling */
     .pdf-page-container {
       position: relative;
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
-      transition: transform 0.15s ease-out;
-      margin: 0 auto 30px auto;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+      margin: 0 auto;
       background-color: #ffffff;
+      border-radius: 4px;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .text-overlay-item {
@@ -58,13 +79,12 @@
       cursor: text;
       transform-origin: 0% 0%;
       line-height: 1.0;
-      border: 1px solid transparent;
       border-radius: 2px;
     }
 
     .text-overlay-item:hover {
-      background-color: rgba(59, 130, 246, 0.15);
-      border-color: rgba(59, 130, 246, 0.4);
+      background-color: rgba(37, 99, 235, 0.12);
+      outline: 1px dashed rgba(37, 99, 235, 0.5);
     }
 
     .custom-annotation {
@@ -76,7 +96,7 @@
     .custom-text-box {
       position: absolute;
       outline: none;
-      min-width: 20px;
+      min-width: 24px;
       padding: 2px 4px;
       line-height: 1.2;
       word-break: break-word;
@@ -85,201 +105,209 @@
     }
 
     .custom-text-box:focus, .custom-text-box.selected {
-      border-color: #3b82f6;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
     }
 
-    /* Custom Color Picker Swatches */
     .color-swatch {
-      width: 20px;
-      height: 20px;
+      width: 18px;
+      height: 18px;
       border-radius: 50%;
       cursor: pointer;
       border: 2px solid transparent;
-      transition: transform 0.1s;
+      transition: all 0.15s ease;
     }
     .color-swatch:hover {
       transform: scale(1.15);
     }
     .color-swatch.active {
       border-color: #ffffff;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.8);
+    }
+
+    /* Subtle Glassmorphism Navbar */
+    .nav-blur {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
     }
   </style>
 </head>
-<body class="h-full flex flex-col overflow-hidden font-[Inter]">
+<body class="h-full flex flex-col overflow-hidden font-sans bg-slate-950 text-slate-100 antialiased selection:bg-brand-500 selection:text-white">
 
-  <!-- TOP NAVBAR -->
-  <header class="bg-slate-950 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between shrink-0 z-30">
-    <!-- Brand / Title -->
-    <div class="flex items-center space-x-3">
-      <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-lg flex items-center justify-center">
-        <i class="fa-solid fa-file-pen text-lg"></i>
+  <!-- TOP APP BAR -->
+  <header class="bg-slate-950 border-b border-slate-800/80 px-6 py-3 flex items-center justify-between shrink-0 z-30 shadow-sm">
+    <!-- Brand Title -->
+    <div class="flex items-center space-x-3.5">
+      <div class="bg-gradient-to-tr from-brand-700 to-brand-500 text-white w-9 h-9 rounded-lg shadow-md flex items-center justify-center font-semibold">
+        <i class="fa-solid fa-file-contract text-base"></i>
       </div>
       <div>
-        <h1 class="font-bold text-slate-100 text-base leading-tight flex items-center gap-2">
-          PDF Text Editor
-          <span class="text-xs bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 px-2 py-0.5 rounded-full font-normal">Interactive Pro</span>
+        <h1 class="font-bold text-slate-100 text-sm tracking-tight flex items-center gap-2">
+          Document Studio
+          <span class="text-[10px] bg-slate-800 text-slate-300 border border-slate-700/60 px-2 py-0.5 rounded font-medium uppercase tracking-wider">Pro</span>
         </h1>
-        <p class="text-xs text-slate-400" id="file-info">No document loaded</p>
+        <p class="text-[11px] text-slate-400 font-medium" id="file-info">Ready for document</p>
       </div>
     </div>
 
-    <!-- Actions & Controls -->
+    <!-- Central Navigation & Actions -->
     <div class="flex items-center space-x-3">
       <input type="file" id="pdf-file-input" accept="application/pdf" class="hidden" />
       
-      <button id="btn-open-file" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3.5 py-2 rounded-md font-medium border border-slate-700 transition flex items-center gap-2">
-        <i class="fa-solid fa-folder-open text-indigo-400"></i> Open PDF
+      <button id="btn-open-file" class="bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs px-3.5 py-2 rounded-lg font-medium border border-slate-800 transition-all flex items-center gap-2 shadow-sm">
+        <i class="fa-solid fa-arrow-up-from-bracket text-slate-400"></i> Open PDF
       </button>
 
-      <button id="btn-sample-pdf" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-md font-medium border border-slate-700 transition flex items-center gap-2">
-        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> Try Sample
-      </button>
-
-      <div class="h-5 w-px bg-slate-800"></div>
-
-      <button id="btn-export-pdf" disabled class="bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs px-4 py-2 rounded-md font-semibold shadow-md transition flex items-center gap-2">
-        <i class="fa-solid fa-download"></i> Save / Export PDF
-      </button>
-    </div>
-  </header>
-
-  <!-- SECONDARY TOOLBAR / FORMAT BAR -->
-  <div class="bg-slate-900 border-b border-slate-800 px-4 py-2 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20 text-xs">
-    
-    <!-- Primary Tool Selection -->
-    <div class="flex items-center space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
-      <button data-tool="select" class="tool-btn active bg-indigo-600 text-white px-3 py-1.5 rounded flex items-center gap-1.5 transition">
-        <i class="fa-solid fa-arrow-pointer"></i> <span>Select</span>
-      </button>
-      <button data-tool="edit-text" class="tool-btn text-slate-300 hover:bg-slate-800 px-3 py-1.5 rounded flex items-center gap-1.5 transition" title="Click on existing PDF text to edit or replace it">
-        <i class="fa-solid fa-i-cursor text-indigo-400"></i> <span>Edit Text</span>
-      </button>
-      <button data-tool="add-text" class="tool-btn text-slate-300 hover:bg-slate-800 px-3 py-1.5 rounded flex items-center gap-1.5 transition" title="Click anywhere to insert a new text block">
-        <i class="fa-solid fa-font text-emerald-400"></i> <span>Add Text</span>
-      </button>
-      <button data-tool="whiteout" class="tool-btn text-slate-300 hover:bg-slate-800 px-3 py-1.5 rounded flex items-center gap-1.5 transition" title="Cover/Erase unwanted text or objects with whiteout box">
-        <i class="fa-solid fa-eraser text-rose-400"></i> <span>Whiteout / Erase</span>
-      </button>
-      <button data-tool="highlight" class="tool-btn text-slate-300 hover:bg-slate-800 px-3 py-1.5 rounded flex items-center gap-1.5 transition" title="Highlight text or areas">
-        <i class="fa-solid fa-highlighter text-amber-400"></i> <span>Highlight</span>
-      </button>
-      <button data-tool="draw" class="tool-btn text-slate-300 hover:bg-slate-800 px-3 py-1.5 rounded flex items-center gap-1.5 transition" title="Freehand signature or drawing">
-        <i class="fa-solid fa-pen-nib text-sky-400"></i> <span>Freehand Draw</span>
-      </button>
-    </div>
-
-    <!-- Active Text Formatting Properties Bar -->
-    <div id="formatting-toolbar" class="flex items-center space-x-3 bg-slate-950 px-3 py-1 rounded-lg border border-slate-800">
-      <!-- Font Family -->
-      <div class="flex items-center space-x-1">
-        <span class="text-slate-400">Font:</span>
-        <select id="font-family-select" class="bg-slate-800 text-slate-200 border border-slate-700 rounded px-2 py-1 outline-none focus:border-indigo-500">
-          <option value="Helvetica" style="font-family: sans-serif;">Helvetica (Sans)</option>
-          <option value="Times-Roman" style="font-family: serif;">Times Roman</option>
-          <option value="Courier" style="font-family: monospace;">Courier (Mono)</option>
-        </select>
-      </div>
-
-      <!-- Font Size -->
-      <div class="flex items-center space-x-1">
-        <span class="text-slate-400">Size:</span>
-        <input type="number" id="font-size-input" min="6" max="120" value="14" class="w-14 bg-slate-800 text-slate-200 border border-slate-700 rounded px-2 py-1 outline-none focus:border-indigo-500 text-center" />
-      </div>
-
-      <!-- Text Color Picker -->
-      <div class="flex items-center space-x-1.5 pl-2 border-l border-slate-800">
-        <span class="text-slate-400">Color:</span>
-        <div class="flex items-center space-x-1" id="color-palette">
-          <div class="color-swatch active bg-slate-900 border" data-color="#000000" style="background:#000" title="Black"></div>
-          <div class="color-swatch bg-blue-600" data-color="#2563eb" title="Blue"></div>
-          <div class="color-swatch bg-red-600" data-color="#dc2626" title="Red"></div>
-          <div class="color-swatch bg-emerald-600" data-color="#059669" title="Green"></div>
-        </div>
-        <input type="color" id="custom-color-picker" value="#000000" class="w-6 h-6 rounded cursor-pointer bg-transparent border-0" title="Custom color" />
-      </div>
-
-      <!-- Delete Element Button -->
-      <button id="btn-delete-element" class="hidden bg-rose-900/50 hover:bg-rose-900 text-rose-300 border border-rose-700/50 px-2.5 py-1 rounded transition flex items-center gap-1">
-        <i class="fa-solid fa-trash-can"></i> Delete
-      </button>
-    </div>
-
-    <!-- Page Zoom & Pagination Controls -->
-    <div class="flex items-center space-x-2 bg-slate-950 px-3 py-1 rounded-lg border border-slate-800">
-      <button id="btn-prev-page" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition">
-        <i class="fa-solid fa-chevron-left"></i>
-      </button>
-      <span class="text-slate-300">Page <span id="current-page-num" class="font-bold text-white">0</span> / <span id="total-pages-num">0</span></span>
-      <button id="btn-next-page" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition">
-        <i class="fa-solid fa-chevron-right"></i>
+      <button id="btn-sample-pdf" class="bg-slate-900 hover:bg-slate-800 text-slate-200 text-xs px-3.5 py-2 rounded-lg font-medium border border-slate-800 transition-all flex items-center gap-2 shadow-sm">
+        <i class="fa-solid fa-file-lines text-brand-500"></i> Load Sample
       </button>
 
       <div class="h-4 w-px bg-slate-800 my-auto mx-1"></div>
 
-      <button id="btn-zoom-out" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition" title="Zoom Out">
-        <i class="fa-solid fa-magnifying-glass-minus"></i>
+      <button id="btn-export-pdf" disabled class="bg-brand-600 hover:bg-brand-500 disabled:opacity-30 disabled:hover:bg-brand-600 disabled:cursor-not-allowed text-white text-xs px-4 py-2 rounded-lg font-medium shadow-md shadow-brand-900/20 transition-all flex items-center gap-2">
+        <i class="fa-solid fa-download"></i> Export PDF
       </button>
-      <span id="zoom-percentage" class="text-slate-300 min-w-[40px] text-center">100%</span>
-      <button id="btn-zoom-in" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded transition" title="Zoom In">
-        <i class="fa-solid fa-magnifying-glass-plus"></i>
+    </div>
+  </header>
+
+  <!-- CONTROL TOOLBAR (CENTERED & SLEEK) -->
+  <div class="nav-blur border-b border-slate-800/80 px-6 py-2.5 flex flex-wrap items-center justify-between gap-4 shrink-0 z-20">
+    
+    <!-- Left: Tool Selector -->
+    <div class="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800/80 shadow-inner">
+      <button data-tool="select" class="tool-btn active bg-brand-600 text-white px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all">
+        <i class="fa-solid fa-arrow-pointer text-xs"></i> Select
+      </button>
+      <button data-tool="edit-text" class="tool-btn text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all" title="Edit original PDF text directly">
+        <i class="fa-solid fa-pen-to-square text-xs text-brand-400"></i> Edit Text
+      </button>
+      <button data-tool="add-text" class="tool-btn text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all" title="Add custom text block">
+        <i class="fa-solid fa-font text-xs text-emerald-400"></i> Add Text
+      </button>
+      <button data-tool="whiteout" class="tool-btn text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all" title="Cover/redact sections">
+        <i class="fa-solid fa-eraser text-xs text-rose-400"></i> Whiteout
+      </button>
+      <button data-tool="highlight" class="tool-btn text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all" title="Highlight text">
+        <i class="fa-solid fa-highlighter text-xs text-amber-400"></i> Highlight
+      </button>
+      <button data-tool="draw" class="tool-btn text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 px-3.5 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-all" title="Signature or freehand drawing">
+        <i class="fa-solid fa-signature text-xs text-sky-400"></i> Draw
+      </button>
+    </div>
+
+    <!-- Center: Formatting Controls -->
+    <div id="formatting-toolbar" class="flex items-center space-x-3 bg-slate-900/90 px-3.5 py-1 rounded-xl border border-slate-800/80 text-xs">
+      <div class="flex items-center space-x-2">
+        <span class="text-slate-400 text-[11px] font-medium">Font</span>
+        <select id="font-family-select" class="bg-slate-800 text-slate-200 border border-slate-700/80 rounded-lg px-2.5 py-1 outline-none focus:border-brand-500 font-sans text-xs">
+          <option value="Helvetica">Helvetica</option>
+          <option value="Times-Roman">Times Roman</option>
+          <option value="Courier">Courier</option>
+        </select>
+      </div>
+
+      <div class="h-4 w-px bg-slate-800"></div>
+
+      <div class="flex items-center space-x-2">
+        <span class="text-slate-400 text-[11px] font-medium">Size</span>
+        <input type="number" id="font-size-input" min="6" max="120" value="14" class="w-12 bg-slate-800 text-slate-200 border border-slate-700/80 rounded-lg px-2 py-1 outline-none focus:border-brand-500 text-center text-xs font-medium" />
+      </div>
+
+      <div class="h-4 w-px bg-slate-800"></div>
+
+      <div class="flex items-center space-x-2">
+        <span class="text-slate-400 text-[11px] font-medium">Color</span>
+        <div class="flex items-center space-x-1.5" id="color-palette">
+          <div class="color-swatch active bg-slate-950 border" data-color="#000000" title="Black"></div>
+          <div class="color-swatch bg-blue-600" data-color="#2563eb" title="Blue"></div>
+          <div class="color-swatch bg-red-600" data-color="#dc2626" title="Red"></div>
+          <div class="color-swatch bg-emerald-600" data-color="#059669" title="Green"></div>
+        </div>
+        <input type="color" id="custom-color-picker" value="#000000" class="w-5 h-5 rounded cursor-pointer bg-transparent border-0 p-0" title="Custom color" />
+      </div>
+
+      <button id="btn-delete-element" class="hidden bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 font-medium text-xs">
+        <i class="fa-solid fa-trash-can text-[10px]"></i> Delete
+      </button>
+    </div>
+
+    <!-- Right: Zoom & Navigation -->
+    <div class="flex items-center space-x-2 bg-slate-900/90 px-3.5 py-1 rounded-xl border border-slate-800/80 text-xs">
+      <button id="btn-prev-page" class="text-slate-400 hover:text-slate-100 p-1 transition-all">
+        <i class="fa-solid fa-chevron-left"></i>
+      </button>
+      <span class="text-slate-300 font-medium px-1">
+        <span id="current-page-num" class="text-slate-100 font-bold">0</span> / <span id="total-pages-num" class="text-slate-400">0</span>
+      </span>
+      <button id="btn-next-page" class="text-slate-400 hover:text-slate-100 p-1 transition-all">
+        <i class="fa-solid fa-chevron-right"></i>
+      </button>
+
+      <div class="h-4 w-px bg-slate-800"></div>
+
+      <button id="btn-zoom-out" class="text-slate-400 hover:text-slate-100 p-1 transition-all" title="Zoom Out">
+        <i class="fa-solid fa-minus text-[10px]"></i>
+      </button>
+      <span id="zoom-percentage" class="text-slate-300 font-medium w-12 text-center text-xs">100%</span>
+      <button id="btn-zoom-in" class="text-slate-400 hover:text-slate-100 p-1 transition-all" title="Zoom In">
+        <i class="fa-solid fa-plus text-[10px]"></i>
       </button>
     </div>
 
   </div>
 
-  <!-- MAIN MAIN WORKSPACE AREA -->
+  <!-- WORKSPACE -->
   <div class="flex-1 flex overflow-hidden relative">
     
     <!-- LEFT SIDEBAR: Page Thumbnails -->
-    <aside id="thumbnails-sidebar" class="w-56 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0 hidden md:flex">
-      <div class="p-3 border-b border-slate-800 text-xs font-semibold text-slate-400 uppercase tracking-wider flex justify-between items-center">
-        <span>Pages Overview</span>
+    <aside id="thumbnails-sidebar" class="w-60 bg-slate-950 border-r border-slate-800/80 flex flex-col shrink-0 hidden lg:flex">
+      <div class="p-3.5 border-b border-slate-800/80 text-[11px] font-semibold text-slate-400 uppercase tracking-wider flex justify-between items-center">
+        <span>Pages</span>
         <i class="fa-solid fa-layer-group text-slate-500"></i>
       </div>
-      <div id="thumbnails-container" class="flex-1 overflow-y-auto p-3 space-y-4">
-        <div class="text-center py-10 text-xs text-slate-600">No pages loaded</div>
+      <div id="thumbnails-container" class="flex-1 overflow-y-auto p-3.5 space-y-4">
+        <div class="text-center py-12 text-xs text-slate-500 font-medium">No document loaded</div>
       </div>
     </aside>
 
-    <!-- CENTER EDITOR CANVAS WORKSPACE -->
-    <main id="editor-viewport" class="flex-1 overflow-auto p-6 bg-slate-900/90 relative flex flex-col items-center justify-start min-h-0">
+    <!-- CENTER EDITOR VIEWPORT (CENTERED CANVAS) -->
+    <main id="editor-viewport" class="flex-1 overflow-auto p-8 bg-slate-900/60 relative flex items-start justify-center min-h-0">
       
-      <!-- EMPTY STATE LANDING PROMPT -->
-      <div id="empty-state" class="my-auto text-center p-8 max-w-lg border-2 border-dashed border-slate-800 rounded-2xl bg-slate-950/50 backdrop-blur">
-        <div class="w-16 h-16 bg-indigo-600/10 text-indigo-400 border border-indigo-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-xl">
+      <!-- EMPTY STATE -->
+      <div id="empty-state" class="my-auto text-center p-10 max-w-md border border-slate-800 rounded-2xl bg-slate-950/70 shadow-2xl backdrop-blur">
+        <div class="w-14 h-14 bg-brand-500/10 text-brand-500 border border-brand-500/20 rounded-2xl flex items-center justify-center mx-auto mb-5 text-xl shadow-inner">
           <i class="fa-solid fa-file-pdf"></i>
         </div>
-        <h2 class="text-lg font-bold text-slate-100 mb-2">No PDF Document Selected</h2>
+        <h2 class="text-base font-semibold text-slate-100 mb-2">Upload a PDF to get started</h2>
         <p class="text-xs text-slate-400 mb-6 leading-relaxed">
-          Upload a PDF to edit its existing text directly, whiteout sections, add custom annotations, signatures, or notes with full styling options.
+          Edit existing text, place new annotations, add whiteouts, or draw freehand directly in your browser.
         </p>
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button onclick="document.getElementById('pdf-file-input').click()" class="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-xs px-5 py-2.5 rounded-lg shadow-lg transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-upload"></i> Upload PDF File
+          <button onclick="document.getElementById('pdf-file-input').click()" class="w-full sm:w-auto bg-brand-600 hover:bg-brand-500 text-white font-medium text-xs px-4 py-2.5 rounded-lg shadow-md transition-all flex items-center justify-center gap-2">
+            <i class="fa-solid fa-upload"></i> Upload File
           </button>
-          <button onclick="loadSamplePDF()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium text-xs px-5 py-2.5 rounded-lg transition flex items-center justify-center gap-2">
-            <i class="fa-solid fa-bolt text-amber-400"></i> Load Sample PDF
+          <button onclick="loadSamplePDF()" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 border border-slate-700/80 text-slate-200 font-medium text-xs px-4 py-2.5 rounded-lg transition-all flex items-center justify-center gap-2">
+            <i class="fa-solid fa-file-contract text-brand-400"></i> Demo Document
           </button>
         </div>
       </div>
 
       <!-- MAIN PAGE RENDERER CONTAINER -->
-      <div id="page-render-wrapper" class="hidden relative">
-        <!-- Rendered Page Container populated dynamically -->
+      <div id="page-render-wrapper" class="hidden relative my-auto">
+        <!-- Canvas page rendered here -->
       </div>
 
     </main>
 
   </div>
 
-  <!-- FLOATING NOTIFICATION / TOAST -->
-  <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 border border-slate-700 text-slate-200 text-xs px-4 py-3 rounded-lg shadow-2xl transition transform translate-y-20 opacity-0 flex items-center gap-3 z-50">
-    <i id="toast-icon" class="fa-solid fa-circle-info text-indigo-400 text-base"></i>
-    <span id="toast-msg">Notification message</span>
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-700/80 text-slate-200 text-xs px-4 py-3 rounded-xl shadow-2xl transition-all transform translate-y-20 opacity-0 flex items-center gap-3 z-50">
+    <i id="toast-icon" class="fa-solid fa-circle-info text-brand-400 text-sm"></i>
+    <span id="toast-msg" class="font-medium">Notification message</span>
   </div>
 
-  <!-- APPLICATION LOGIC SCRIPT -->
+  <!-- APPLICATION LOGIC -->
   <script>
     // --- APP STATE ---
     let rawPdfBytes = null;
@@ -288,25 +316,15 @@
     let currentPageIndex = 1;
     let totalPages = 0;
     let currentZoom = 1.0;
-    let activeTool = 'select'; // 'select' | 'edit-text' | 'add-text' | 'whiteout' | 'highlight' | 'draw'
+    let activeTool = 'select';
     
-    // Formatting State
     let currentFontFamily = 'Helvetica';
     let currentFontSize = 14;
     let currentTextColor = '#000000';
 
-    // Annotation Data per page: Map pageIndex -> Array of annotation objects
-    // Annotation Types: 
-    // - 'text-edit': { type: 'text-edit', x, y, width, height, origText, newText, font, fontSize, color }
-    // - 'add-text': { type: 'add-text', x, y, text, font, fontSize, color }
-    // - 'whiteout': { type: 'whiteout', x, y, width, height }
-    // - 'highlight': { type: 'highlight', x, y, width, height, color }
-    // - 'draw': { type: 'draw', points: [{x,y}], color, strokeWidth }
     const pageAnnotations = {};
-
     let activeSelectedElement = null;
     let isDrawing = false;
-    let currentDrawPath = null;
 
     // --- DOM ELEMENTS ---
     const fileInput = document.getElementById('pdf-file-input');
@@ -334,7 +352,7 @@
     const customColorPicker = document.getElementById('custom-color-picker');
     const btnDeleteElement = document.getElementById('btn-delete-element');
 
-    // --- INITIALIZATION & EVENT LISTENERS ---
+    // --- INITIALIZATION ---
     window.addEventListener('DOMContentLoaded', () => {
       setupEventListeners();
     });
@@ -345,30 +363,26 @@
       btnSamplePdf.addEventListener('click', loadSamplePDF);
       btnExportPdf.addEventListener('click', exportModifiedPDF);
 
-      // Page Nav
       btnPrevPage.addEventListener('click', () => changePage(-1));
       btnNextPage.addEventListener('click', () => changePage(1));
 
-      // Zoom Nav
       btnZoomIn.addEventListener('click', () => setZoom(currentZoom + 0.15));
       btnZoomOut.addEventListener('click', () => setZoom(currentZoom - 0.15));
 
-      // Tool Switching
       toolButtons.forEach(btn => {
         btn.addEventListener('click', () => {
           toolButtons.forEach(b => {
-            b.classList.remove('active', 'bg-indigo-600', 'text-white');
-            b.classList.add('text-slate-300');
+            b.classList.remove('active', 'bg-brand-600', 'text-white');
+            b.classList.add('text-slate-400');
           });
-          btn.classList.add('active', 'bg-indigo-600', 'text-white');
-          btn.classList.remove('text-slate-300');
+          btn.classList.add('active', 'bg-brand-600', 'text-white');
+          btn.classList.remove('text-slate-400');
           
           activeTool = btn.getAttribute('data-tool');
-          showToast(`Tool switched to: ${activeTool.toUpperCase()}`, 'info');
+          showToast(`Active tool: ${btn.textContent.trim()}`, 'info');
         });
       });
 
-      // Formatting Controls
       fontFamilySelect.addEventListener('change', (e) => {
         currentFontFamily = e.target.value;
         if (activeSelectedElement && activeSelectedElement.dataset.type === 'add-text') {
@@ -404,11 +418,9 @@
     }
 
     function applyColorToSelected() {
-      if (activeSelectedElement) {
-        if (activeSelectedElement.dataset.type === 'add-text') {
-          activeSelectedElement.style.color = currentTextColor;
-          updateElementAnnotationData(activeSelectedElement);
-        }
+      if (activeSelectedElement && activeSelectedElement.dataset.type === 'add-text') {
+        activeSelectedElement.style.color = currentTextColor;
+        updateElementAnnotationData(activeSelectedElement);
       }
     }
 
@@ -420,28 +432,24 @@
         return;
       }
 
-      fileInfo.textContent = `${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+      fileInfo.textContent = `${file.name}`;
       const arrayBuffer = await file.arrayBuffer();
       loadPDFBytes(arrayBuffer);
     }
 
     async function loadPDFBytes(arrayBuffer) {
       try {
-        showToast('Loading PDF document...', 'info');
+        showToast('Loading document...', 'info');
         rawPdfBytes = arrayBuffer;
 
-        // Reset state
         Object.keys(pageAnnotations).forEach(k => delete pageAnnotations[k]);
         currentPageIndex = 1;
 
-        // Load into PDF.js
         pdfjsDoc = await pdfjsLib.getDocument({ data: rawPdfBytes.slice(0) }).promise;
         totalPages = pdfjsDoc.numPages;
 
-        // Load into pdf-lib
         pdfLibDoc = await PDFLib.PDFDocument.load(rawPdfBytes.slice(0));
 
-        // UI Updates
         emptyState.classList.add('hidden');
         pageWrapper.classList.remove('hidden');
         btnExportPdf.disabled = false;
@@ -451,7 +459,7 @@
         await renderThumbnails();
         await renderCurrentPage();
 
-        showToast('PDF Document loaded successfully!', 'success');
+        showToast('Document loaded successfully', 'success');
       } catch (err) {
         console.error(err);
         showToast('Failed to load PDF document.', 'error');
@@ -463,11 +471,11 @@
       thumbnailsContainer.innerHTML = '';
       for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
         const page = await pdfjsDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale: 0.2 });
+        const viewport = page.getViewport({ scale: 0.18 });
 
         const thumbWrapper = document.createElement('div');
-        thumbWrapper.className = `cursor-pointer rounded-lg border-2 p-1 transition flex flex-col items-center bg-slate-900 ${
-          pageNum === currentPageIndex ? 'border-indigo-500 shadow-md shadow-indigo-500/20' : 'border-slate-800 hover:border-slate-700'
+        thumbWrapper.className = `cursor-pointer rounded-lg border p-1 transition-all flex flex-col items-center bg-slate-900 ${
+          pageNum === currentPageIndex ? 'border-brand-500 shadow-lg shadow-brand-500/10' : 'border-slate-800 hover:border-slate-700'
         }`;
         thumbWrapper.dataset.pageNum = pageNum;
 
@@ -475,7 +483,7 @@
         const ctx = canvas.getContext('2d');
         canvas.width = viewport.width;
         canvas.height = viewport.height;
-        canvas.className = "rounded shadow";
+        canvas.className = "rounded-sm shadow-sm";
 
         await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
@@ -500,14 +508,14 @@
       document.querySelectorAll('#thumbnails-container > div').forEach(thumb => {
         const pageNum = parseInt(thumb.dataset.pageNum);
         if (pageNum === currentPageIndex) {
-          thumb.className = 'cursor-pointer rounded-lg border-2 p-1 transition flex flex-col items-center bg-slate-900 border-indigo-500 shadow-md shadow-indigo-500/20';
+          thumb.className = 'cursor-pointer rounded-lg border p-1 transition-all flex flex-col items-center bg-slate-900 border-brand-500 shadow-lg shadow-brand-500/10';
         } else {
-          thumb.className = 'cursor-pointer rounded-lg border-2 p-1 transition flex flex-col items-center bg-slate-900 border-slate-800 hover:border-slate-700';
+          thumb.className = 'cursor-pointer rounded-lg border p-1 transition-all flex flex-col items-center bg-slate-900 border-slate-800 hover:border-slate-700';
         }
       });
     }
 
-    // --- PAGE RENDERER & INTERACTIVE OVERLAY ---
+    // --- PAGE RENDERER ---
     async function renderCurrentPage() {
       if (!pdfjsDoc) return;
 
@@ -517,13 +525,11 @@
       const page = await pdfjsDoc.getPage(currentPageIndex);
       const viewport = page.getViewport({ scale: currentZoom });
 
-      // Parent container
       const container = document.createElement('div');
-      container.className = 'pdf-page-container rounded border border-slate-700 overflow-hidden';
+      container.className = 'pdf-page-container border border-slate-800 overflow-hidden';
       container.style.width = `${viewport.width}px`;
       container.style.height = `${viewport.height}px`;
 
-      // 1. PDF Canvas Layer
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = viewport.width;
@@ -531,23 +537,18 @@
       canvas.className = 'absolute top-0 left-0 z-0';
 
       container.appendChild(canvas);
-
-      // Render PDF Page to Canvas
       await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-      // 2. Interactive SVG Vector Layer for drawings & highlights
       const svgLayer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svgLayer.setAttribute('class', 'absolute top-0 left-0 w-full h-full z-10 pointer-events-none');
       svgLayer.setAttribute('width', viewport.width);
       svgLayer.setAttribute('height', viewport.height);
       container.appendChild(svgLayer);
 
-      // 3. Extracted Text Overlay Layer (for text editing feature)
       const textOverlayContainer = document.createElement('div');
       textOverlayContainer.className = 'absolute top-0 left-0 w-full h-full z-20 overflow-hidden';
       container.appendChild(textOverlayContainer);
 
-      // Render extracted native PDF text items
       const textContent = await page.getTextContent();
       textContent.items.forEach(item => {
         const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
@@ -560,20 +561,18 @@
         textDiv.style.top = `${tx[5] - fontHeight}px`;
         textDiv.style.fontSize = `${fontHeight}px`;
         textDiv.style.fontFamily = item.fontName || 'sans-serif';
-        textDiv.style.color = 'transparent'; // Hidden visually until interacted with or edited
+        textDiv.style.color = 'transparent';
 
-        // Text editing interaction
         textDiv.addEventListener('click', (e) => {
           if (activeTool === 'edit-text') {
             e.stopPropagation();
-            makeNativeTextEditable(textDiv, item, tx[4], tx[5] - fontHeight, fontHeight, viewport);
+            makeNativeTextEditable(textDiv, item, tx[4], tx[5] - fontHeight, fontHeight);
           }
         });
 
         textOverlayContainer.appendChild(textDiv);
       });
 
-      // 4. Click Handler for Workspace Canvas (Add text, whiteout, draw)
       textOverlayContainer.addEventListener('mousedown', (e) => {
         const rect = textOverlayContainer.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -592,18 +591,14 @@
         }
       });
 
-      // Re-render saved custom annotations for this page
       restorePageAnnotations(currentPageIndex, textOverlayContainer, svgLayer);
-
       pageWrapper.appendChild(container);
     }
 
-    // --- EDIT EXISTING NATIVE PDF TEXT ---
-    function makeNativeTextEditable(textDiv, pdfItem, origX, origY, fontSize, viewport) {
-      // Hide original text item visuals
+    // --- NATIVE TEXT EDITING ---
+    function makeNativeTextEditable(textDiv, pdfItem, origX, origY, fontSize) {
       textDiv.style.visibility = 'hidden';
 
-      // Create Whiteout underlying box to cover original text
       const maskBox = document.createElement('div');
       maskBox.className = 'absolute bg-white z-20';
       maskBox.style.left = `${origX}px`;
@@ -612,10 +607,9 @@
       maskBox.style.height = `${fontSize * 1.2}px`;
       textDiv.parentElement.appendChild(maskBox);
 
-      // Create new editable input replacement
       const input = document.createElement('div');
       input.contentEditable = true;
-      input.className = 'custom-text-box z-30 bg-white border border-blue-500 rounded text-slate-900 font-sans shadow-sm';
+      input.className = 'custom-text-box z-30 bg-white border border-brand-500 rounded text-slate-900 font-sans shadow-sm';
       input.style.left = `${origX}px`;
       input.style.top = `${origY}px`;
       input.style.fontSize = `${fontSize}px`;
@@ -625,7 +619,6 @@
       textDiv.parentElement.appendChild(input);
       input.focus();
 
-      // Store in annotations state
       const animData = {
         id: Date.now(),
         type: 'text-edit',
@@ -647,19 +640,13 @@
         animData.newText = input.textContent;
         maskBox.style.width = `${input.offsetWidth + 4}px`;
       });
-
-      input.addEventListener('blur', () => {
-        if (!input.textContent.trim()) {
-          // If empty, reset
-        }
-      });
     }
 
-    // --- ADD NEW TEXT BOX ---
+    // --- ADD TEXT BOX ---
     function addNewTextBox(container, x, y, textValue = 'Click to edit text', font = currentFontFamily, size = currentFontSize, color = currentTextColor) {
       const textBox = document.createElement('div');
       textBox.contentEditable = true;
-      textBox.className = 'custom-text-box z-30 text-slate-900 shadow-sm';
+      textBox.className = 'custom-text-box z-30 text-slate-900 shadow-sm font-sans';
       textBox.dataset.type = 'add-text';
       textBox.style.left = `${x}px`;
       textBox.style.top = `${y}px`;
@@ -671,7 +658,6 @@
       container.appendChild(textBox);
       selectElement(textBox);
 
-      // Store annotation state
       const animData = {
         id: Date.now(),
         type: 'add-text',
@@ -697,7 +683,7 @@
       textBox.focus();
     }
 
-    // --- WHITEOUT / ERASE BOX ---
+    // --- WHITEOUT BOX ---
     function addWhiteoutBox(container, x, y, width = 120, height = 30) {
       const box = document.createElement('div');
       box.className = 'custom-annotation absolute bg-white border border-slate-300 z-20 shadow-sm rounded-xs';
@@ -726,7 +712,7 @@
       selectElement(box);
     }
 
-    // --- HIGHLIGHT AREA ---
+    // --- HIGHLIGHT BOX ---
     function addHighlightBox(container, x, y, width = 140, height = 24) {
       const box = document.createElement('div');
       box.className = 'custom-annotation absolute bg-amber-300/40 border border-amber-400/60 z-20 rounded-xs';
@@ -766,7 +752,6 @@
       path.setAttribute('stroke-width', (2 * currentZoom).toString());
       path.setAttribute('fill', 'none');
       path.setAttribute('stroke-linecap', 'round');
-      path.setAttribute('stroke-linejoin', 'round');
 
       svgLayer.appendChild(path);
 
@@ -791,7 +776,6 @@
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
 
-        // Save annotation
         const animData = {
           id: Date.now(),
           type: 'draw',
@@ -809,14 +793,14 @@
       window.addEventListener('mouseup', onMouseUp);
     }
 
-    // --- RESTORE ANNOTATIONS ON PAGE RENDER ---
+    // --- RESTORE ANNOTATIONS ---
     function restorePageAnnotations(pageNum, container, svgLayer) {
       const items = pageAnnotations[pageNum] || [];
       items.forEach(anim => {
         if (anim.type === 'add-text') {
           const textBox = document.createElement('div');
           textBox.contentEditable = true;
-          textBox.className = 'custom-text-box z-30 text-slate-900 shadow-sm';
+          textBox.className = 'custom-text-box z-30 text-slate-900 shadow-sm font-sans';
           textBox.dataset.type = 'add-text';
           textBox.dataset.id = anim.id;
           textBox.style.left = `${anim.x * currentZoom}px`;
@@ -871,7 +855,7 @@
       });
     }
 
-    // --- DRAGGABLE HELPER ---
+    // --- DRAG HELPER ---
     function makeElementDraggable(element, animData) {
       let isDragging = false;
       let startX, startY;
@@ -934,7 +918,7 @@
 
       activeSelectedElement.remove();
       deselectActiveElement();
-      showToast('Element deleted', 'info');
+      showToast('Element removed', 'info');
     }
 
     function updateElementAnnotationData(el) {
@@ -948,7 +932,7 @@
       }
     }
 
-    // --- PAGE NAVIGATION & ZOOM CONTROL ---
+    // --- NAVIGATION & ZOOM ---
     function changePage(delta) {
       const targetPage = currentPageIndex + delta;
       if (targetPage >= 1 && targetPage <= totalPages) {
@@ -972,12 +956,12 @@
       return 'sans-serif';
     }
 
-    // --- EXPORT MODIFIED PDF (pdf-lib) ---
+    // --- EXPORT MODIFIED PDF ---
     async function exportModifiedPDF() {
       if (!pdfLibDoc) return;
 
       try {
-        showToast('Processing and exporting PDF...', 'info');
+        showToast('Building document...', 'info');
 
         const pages = pdfLibDoc.getPages();
         const fontHelvetica = await pdfLibDoc.embedFont(PDFLib.StandardFonts.Helvetica);
@@ -990,12 +974,10 @@
           'Courier': fontCourier
         };
 
-        // Process annotations page by page
         for (let pIdx = 1; pIdx <= totalPages; pIdx++) {
           const pdfPage = pages[pIdx - 1];
           const { width, height } = pdfPage.getSize();
 
-          // We need scale ratio between pdf-lib point space and canvas viewport space
           const jsPage = await pdfjsDoc.getPage(pIdx);
           const baseViewport = jsPage.getViewport({ scale: 1.0 });
 
@@ -1006,7 +988,6 @@
 
           for (const anim of annotations) {
             if (anim.type === 'text-edit') {
-              // Draw Whiteout rect over old text
               const pdfX = anim.x * scaleX;
               const pdfY = height - ((anim.y + anim.height) * scaleY);
 
@@ -1018,7 +999,6 @@
                 color: PDFLib.rgb(1, 1, 1)
               });
 
-              // Draw replacement text
               if (anim.newText) {
                 const hexColor = hexToRgbNormalized(anim.color || '#000000');
                 pdfPage.drawText(anim.newText, {
@@ -1084,22 +1064,20 @@
           }
         }
 
-        // Save and trigger download
         const modifiedPdfBytes = await pdfLibDoc.save();
         const blob = new Blob([modifiedPdfBytes], { type: 'application/pdf' });
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
-        link.download = `edited_document_${Date.now()}.pdf`;
+        link.download = `document_${Date.now()}.pdf`;
         link.click();
 
-        showToast('PDF Exported successfully!', 'success');
+        showToast('Document exported successfully', 'success');
       } catch (err) {
         console.error(err);
-        showToast('Failed to export modified PDF.', 'error');
+        showToast('Failed to export PDF.', 'error');
       }
     }
 
-    // Color conversion helper
     function hexToRgbNormalized(hex) {
       let c = hex.replace('#', '');
       if (c.length === 3) {
@@ -1113,7 +1091,7 @@
       };
     }
 
-    // --- LOAD SAMPLE PDF DEMO ---
+    // --- SAMPLE PDF DEMO ---
     async function loadSamplePDF() {
       try {
         const sampleDoc = await PDFLib.PDFDocument.create();
@@ -1122,50 +1100,50 @@
         const font = await sampleDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
         const fontRegular = await sampleDoc.embedFont(PDFLib.StandardFonts.Helvetica);
 
-        page.drawText('CONFIDENTIAL SERVICE AGREEMENT', {
+        page.drawText('EXECUTIVE SERVICE AGREEMENT', {
           x: 50,
           y: height - 60,
-          size: 18,
+          size: 16,
           font: font,
-          color: PDFLib.rgb(0.1, 0.2, 0.5)
+          color: PDFLib.rgb(0.09, 0.14, 0.24)
         });
 
-        page.drawText('Document Reference: #AGR-2026-98124', {
+        page.drawText('REF: #AGR-2026-98124', {
           x: 50,
-          y: height - 85,
-          size: 10,
+          y: height - 80,
+          size: 9,
           font: fontRegular,
-          color: PDFLib.rgb(0.4, 0.4, 0.4)
+          color: PDFLib.rgb(0.4, 0.45, 0.55)
         });
 
         const bodyLines = [
           'This Agreement is entered into between Client Corporation and Technical Service Provider.',
-          '1. Scope of Work: The Provider agrees to deliver software design, text editing tools, and maintenance.',
-          '2. Term & Termination: Effective from January 15, 2026 until December 31, 2026.',
-          '3. Payment Terms: Invoices are payable within 30 days of receipt.',
-          '4. Confidentiality: Both parties agree to maintain complete confidentiality of proprietary algorithms.',
+          '1. Scope of Work: Deliver enterprise-grade web application tools and document workflows.',
+          '2. Term & Conditions: Effective from January 15, 2026 until December 31, 2026.',
+          '3. Payment Schedule: Invoices are processed within 30 business days of issuance.',
+          '4. Confidentiality: Both parties commit to strictly protecting confidential material.',
           ' ',
-          'IN WITNESS WHEREOF, the parties hereto have executed this agreement as of the date above.',
+          'IN WITNESS WHEREOF, the authorized parties execute this agreement below.',
           ' ',
           'Client Representative: _______________________      Date: ____________',
           ' ',
           'Provider Representative: _____________________      Date: ____________'
         ];
 
-        let currentY = height - 140;
+        let currentY = height - 130;
         bodyLines.forEach(line => {
           page.drawText(line, {
             x: 50,
             y: currentY,
-            size: 11,
+            size: 10.5,
             font: fontRegular,
-            color: PDFLib.rgb(0.15, 0.15, 0.15)
+            color: PDFLib.rgb(0.15, 0.2, 0.28)
           });
-          currentY -= 28;
+          currentY -= 26;
         });
 
         const pdfBytes = await sampleDoc.save();
-        fileInfo.textContent = 'Sample_Contract_Agreement.pdf (Generated)';
+        fileInfo.textContent = 'Sample_Agreement.pdf';
         loadPDFBytes(pdfBytes);
       } catch (err) {
         console.error(err);
@@ -1182,11 +1160,11 @@
       toastMsg.textContent = message;
 
       if (type === 'success') {
-        toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-base';
+        toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 text-sm';
       } else if (type === 'error') {
-        toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-base';
+        toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-400 text-sm';
       } else {
-        toastIcon.className = 'fa-solid fa-circle-info text-indigo-400 text-base';
+        toastIcon.className = 'fa-solid fa-circle-info text-brand-400 text-sm';
       }
 
       toast.classList.remove('translate-y-20', 'opacity-0');
